@@ -1,4 +1,8 @@
 ---
+- name: add the official rabbitmq repository (RedHat)
+  get_url: url="{{ rabbitmq_repo }}" dest=/etc/yum.repos.d/rabbitmq_rabbitmq-server.repo
+  when: not rabbitmq_os_package
+
 - name: install EPEL repository (RedHat)
   yum: name="{{ epel_package_rpm }}" state=present
 
