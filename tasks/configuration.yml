@@ -8,6 +8,36 @@
     state=directory
   when: rabbitmq_ssl
 
+- local_action: stat path={{ rabbitmq_server_key }}
+  register: stat_privkey
+  become: no
+  tags: [ssl-certs,configuration]
+
+- local_action: stat path={{ rabbitmq_server_cert }}
+  register: stat_cert
+  become: no
+  tags: [ssl-certs,configuration]
+
+- name: Test if privkey file is needed
+  fail: msg="Privkey file {{ rabbitmq_server_key }} is missing"
+  when: rabbitmq_ssl and not stat_privkey.stat.exists and stat_cert.stat.exists
+  tags: [ssl-certs,configuration]
+
+- name: Test if cert file is needed
+  fail: msg="Cert file {{ rabbitmq_server_cert }} is missing"
+  when: rabbitmq_ssl and stat_privkey.stat.exists and not stat_cert.stat.exists
+  tags: [ssl-certs,configuration]
+
+- name: Test if cert is already installed
+  action: stat path={{ rabbitmq_conf_ssl_options_certfile }}
+  register: stat_installed_cert
+
+- include: generate_cert.yml
+  when: >
+    ( rabbitmq_ssl and not stat_privkey.stat.exists and not stat_cert.stat.exists )
+    and not stat_installed_cert.stat.exists
+  tags: [ssl-certs,configuration]
+
 - name: copy the ssl certificates
   copy:
     src={{ item.src }}
@@ -17,13 +47,14 @@
     mode=0640
     backup=yes
   with_items:
-    - src: "{{ rabbitmq_cacert }}"
-      dest: "{{ rabbitmq_conf_ssl_options_cacertfile }}"
     - src: "{{ rabbitmq_server_key }}"
       dest: "{{ rabbitmq_conf_ssl_options_keyfile }}"
     - src: "{{ rabbitmq_server_cert }}"
       dest: "{{ rabbitmq_conf_ssl_options_certfile }}"
-  when: rabbitmq_ssl
+  when: >
+    ( rabbitmq_ssl and stat_privkey.stat.exists and stat_cert.stat.exists )
+    and not stat_installed_cert.stat.exists
+
 
 - name: generate the configuration of rabbitmq
   template:

@@ -39,12 +39,21 @@ rabbitmq_conf_ssl_options_certfile            : "/etc/rabbitmq/ssl/{{ rabbitmq_s
 rabbitmq_conf_ssl_options_keyfile             : "/etc/rabbitmq/ssl/{{ rabbitmq_server_key | basename }}"
 rabbitmq_conf_ssl_options_fail_if_no_peer_cert: "true"
 
+# SSL generate self-signed cert
+ssl_certs_country: "US"
+ssl_certs_locality: "New York"
+ssl_certs_organization: "Your company"
+ssl_certs_state: "New York"
+ssl_certs_common_name: "{{ansible_fqdn}}"
+ssl_certs_days: "3650"
+ssl_certs_fields: "/C={{ssl_certs_country}}/ST={{ssl_certs_state}}/L={{ssl_certs_locality}}/O={{ssl_certs_organization}}/CN={{ssl_certs_common_name}}"
+
 rabbitmq_env: false
 
 # ###############
 # RedHat Packages
 # ###############
 
-rabbitmq_repo: "https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/config_file.repo?os=centos&dist={{ ansible_distribution_major_version }}&source=script"
+rabbitmq_repo_script: "https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh"
 epel_package_rpm: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
 rabbitmq_server_package_rpm: "rabbitmq-server"

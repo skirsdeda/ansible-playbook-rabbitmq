@@ -1,7 +1,16 @@
 ---
-- name: add the official rabbitmq repository (RedHat)
-  get_url: url="{{ rabbitmq_repo }}" dest=/etc/yum.repos.d/rabbitmq_rabbitmq-server.repo
+- name: Check if {{ rabbitmq_server_package_rpm }} is installed
+  command: rpm -q {{ rabbitmq_server_package_rpm }}
+  register: rpm_check
   when: not rabbitmq_os_package
+
+- name: download official rabbitmq repository installer (RedHat)
+  get_url: url="{{ rabbitmq_repo_script }}" dest=/tmp/rabbitmq_repo_script.rpm.sh mode=0755
+  when: not rabbitmq_os_package and rpm_check.stdout.find('is not installed') != -1
+
+- name: install rabbitmq repository (RedHat)
+  command: /tmp/rabbitmq_repo_script.rpm.sh
+  when: not rabbitmq_os_package and rpm_check.stdout.find('is not installed') != -1
 
 - name: install EPEL repository (RedHat)
   yum: name="{{ epel_package_rpm }}" state=present
